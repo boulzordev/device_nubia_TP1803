@@ -1,5 +1,14 @@
 # All unpinned blobs are from stock 9
 
+# Bluetooth - from sofiar 10
+lib64/libbluetooth_qti.so
+product/lib64/com.qualcomm.qti.bluetooth_audio@1.0.so
+product/lib64/libbtconfigstore.so
+product/lib64/vendor.qti.hardware.bluetooth_audio@2.0.so
+product/lib64/vendor.qti.hardware.bluetooth_dun@1.0.so
+product/lib64/vendor.qti.hardware.bluetooth_sar@1.0.so
+product/lib64/vendor.qti.hardware.btconfigstore@1.0.so
+
 # CNE - from laurel_sprout 10
 etc/cne/Nexus/ATT/ATT_profiles.xml|33e568627fd3f94dc45bca1c01ad10e6d8fb5b52
 etc/cne/Nexus/ROW/ROW_profiles.xml|238e785e9674b27c4b2365958d127533d7293132
