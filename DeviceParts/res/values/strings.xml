@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <string name="advanced_settings">Custom key action</string>
+    <string name="assistant_button_action">Action</string>
+
+    <!-- Actions -->
+    <string name="action_none">None</string>
+    <string name="action_voice_assistant">Voice assistant</string>
+    <string name="action_play_pause">Play/pause</string>
+    <string name="action_flashlight">Flashlight on/off</string>
+    <string name="action_camera">Open camera</string>
+    <string name="action_screenshot">Take screenshot</string>
+    <string name="action_browser">Open browser</string>
+    <string name="action_dialer">Open dialer</string>
+    <string name="action_email">Open email app</string>
+    <string name="action_messages">Open messages app</string>
+
+</resources>

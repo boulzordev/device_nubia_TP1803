@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="assistant_button_listArray">
+        <item>@string/action_none</item>
+        <item>@string/action_voice_assistant</item>
+        <item>@string/action_play_pause</item>
+        <item>@string/action_flashlight</item>
+        <item>@string/action_camera</item>
+        <item>@string/action_browser</item>
+        <item>@string/action_dialer</item>
+        <item>@string/action_email</item>
+        <item>@string/action_messages</item>
+    </string-array>
+    <string-array name="assistant_button_listValues">
+        <item>0</item>
+        <item>108</item> <!-- voice assistant -->
+        <item>107</item> <!-- play/pause -->
+        <item>110</item> <!-- flashlight -->
+        <item>111</item> <!-- camera -->
+        <item>116</item> <!-- browser -->
+        <item>117</item> <!-- dialer -->
+        <item>118</item> <!-- email -->
+        <item>119</item> <!-- messages -->
+    </string-array>
+</resources>
