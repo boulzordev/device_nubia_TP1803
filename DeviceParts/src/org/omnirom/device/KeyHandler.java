@@ -16,7 +16,10 @@
 
 package org.omnirom.device;
 
+import android.app.ActivityManager;
+import android.app.ActivityManagerNative;
 import android.app.ISearchManager;
+import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,10 +30,13 @@ import android.content.pm.ResolveInfo;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.hardware.input.InputManager;
 import android.media.AudioManager;
 import android.media.session.MediaSessionLegacyHelper;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -41,9 +47,14 @@ import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.InputDevice;
+import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 
+import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.omni.DeviceKeyHandler;
+
+import static org.omnirom.device.Constants.*;
 
 import java.util.List;
 
@@ -57,9 +68,12 @@ public class KeyHandler implements DeviceKeyHandler {
     private final AudioManager mAudioManager;
     private final CameraManager mCameraManager;
     private final Context mContext;
+    private KeyguardManager mKeyguardManager;
     private final PowerManager mPowerManager;
     private ISearchManager mSearchManagerService;
     private final Vibrator mVibrator;
+
+    private Handler mHandler;
 
     private String mRearCameraId;
     private boolean mTorchEnabled;
@@ -70,45 +84,88 @@ public class KeyHandler implements DeviceKeyHandler {
         mCameraManager = mContext.getSystemService(CameraManager.class);
         mVibrator = context.getSystemService(Vibrator.class);
         mAudioManager = mContext.getSystemService(AudioManager.class);
+        mHandler = new Handler(Looper.getMainLooper());
     }
 
     public boolean handleKeyEvent(KeyEvent event) {
         int scanCode = event.getScanCode();
 
-        if (scanCode != CUSTOM_SCAN_CODE || event.getAction() != KeyEvent.ACTION_UP) {
+        boolean isFPScanCode = ArrayUtils.contains(sSupportedFPGestures, scanCode);
+
+        if ((scanCode != CUSTOM_SCAN_CODE && !isFPScanCode) || event.getAction() != KeyEvent.ACTION_UP) {
             return false;
         }
 
-        Integer action = Settings.Global.getInt(mContext.getContentResolver(),
-                mAssistantKey, 0);
+        boolean isScreenOn = mPowerManager.isScreenOn();
+
+        Integer action = 0;
+        if (scanCode == CUSTOM_SCAN_CODE) {
+            action = Settings.Global.getInt(mContext.getContentResolver(), mAssistantKey, 0);
+        } else if (isFPScanCode) {
+            action = getFPGestureValueForScanCode(scanCode, isScreenOn);
+        }
 
         if (action == 0) {
             return false;
         } else {
+            ensureKeyguardManager();
             switch (action) {
-                case 108:
+                case ACTION_POWER:
+                    toggleScreenState();
+                    break;
+                case ACTION_VOICE_ASSISTANT:
                     fireGoogleNow();
                     break;
-                case 111:
+                case ACTION_CAMERA:
                     launchCamera();
                     break;
-                case 110:
+                case ACTION_FLASHLIGHT:
                     toggleFlashlight();
                     break;
-                case 116:
+                case ACTION_BROWSER:
                     launchBrowser();
                     break;
-                case 117:
+                case ACTION_DIALER:
                     launchDialer();
                     break;
-                case 118:
+                case ACTION_EMAIL:
                     launchEmail();
                     break;
-                case 119:
+                case ACTION_MESSAGES:
                     launchMessages();
                     break;
-                case 107:
+                case ACTION_PLAY_PAUSE:
                     playPauseMusic();
+                    break;
+                case ACTION_VOLUME_UP:
+                    triggerVirtualKeypress(mHandler, KeyEvent.KEYCODE_VOLUME_UP);
+                    break;
+                case ACTION_VOLUME_DOWN:
+                    triggerVirtualKeypress(mHandler, KeyEvent.KEYCODE_VOLUME_DOWN);
+                    break;
+                case ACTION_PREVIOUS_TRACK:
+                    dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_PREVIOUS, mContext);
+                    break;
+                case ACTION_NEXT_TRACK:
+                    dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_NEXT, mContext);
+                    break;
+                case ACTION_HOME:
+                    if (!mKeyguardManager.inKeyguardRestrictedInputMode()) {
+                        triggerVirtualKeypress(mHandler, KeyEvent.KEYCODE_HOME);
+                    }
+                    break;
+                case ACTION_BACK:
+                    triggerVirtualKeypress(mHandler, KeyEvent.KEYCODE_BACK);
+                    break;
+                case ACTION_RECENTS:
+                    if (!mKeyguardManager.inKeyguardRestrictedInputMode()) {
+                        triggerVirtualKeypress(mHandler, KeyEvent.KEYCODE_APP_SWITCH);
+                    }
+                    break;
+                case ACTION_LAST_APP:
+                    if (!mKeyguardManager.inKeyguardRestrictedInputMode()) {
+                        switchToLastApp(mContext);
+                    }
                     break;
             }
         }
@@ -119,7 +176,9 @@ public class KeyHandler implements DeviceKeyHandler {
     public boolean canHandleKeyEvent(KeyEvent event) {
         int scanCode = event.getScanCode();
 
-        if (scanCode == CUSTOM_SCAN_CODE) {
+        boolean isFPScanCode = ArrayUtils.contains(sSupportedFPGestures, scanCode);
+
+        if (scanCode == CUSTOM_SCAN_CODE || isFPScanCode) {
             return true;
         }
         return false;
@@ -139,6 +198,38 @@ public class KeyHandler implements DeviceKeyHandler {
 
     public Intent isActivityLaunchEvent(KeyEvent event) {
         return null;
+    }
+
+    private Integer getFPGestureValueForScanCode(int scanCode, boolean screenOn) {
+        switch (scanCode) {
+            case FP_TAP_SCANCODE:
+                return Settings.Global.getInt(mContext.getContentResolver(), screenOn ? FP_KEYS : FP_KEYS_OFF, 0);
+            case FP_HOLD_SCANCODE:
+                return Settings.Global.getInt(mContext.getContentResolver(), screenOn ? FP_KEY_HOLD : FP_KEY_HOLD_OFF,
+                        0);
+            case FP_RIGHT_SCANCODE:
+                return Settings.Global.getInt(mContext.getContentResolver(), screenOn ? FP_KEY_RIGHT : FP_KEY_RIGHT_OFF,
+                        0);
+            case FP_LEFT_SCANCODE:
+                return Settings.Global.getInt(mContext.getContentResolver(), screenOn ? FP_KEY_LEFT : FP_KEY_LEFT_OFF,
+                        0);
+        }
+        return 0;
+    }
+
+    private void ensureKeyguardManager() {
+        if (mKeyguardManager == null) {
+            mKeyguardManager =
+                    (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
+        }
+    }
+
+    private void toggleScreenState() {
+        if (mPowerManager.isScreenOn()) {
+            mPowerManager.goToSleep(SystemClock.uptimeMillis());
+        } else {
+            mPowerManager.wakeUp(SystemClock.uptimeMillis());
+        }
     }
 
     private void fireGoogleNow() {
@@ -164,8 +255,7 @@ public class KeyHandler implements DeviceKeyHandler {
 
     private void launchBrowser() {
         mPowerManager.wakeUp(SystemClock.uptimeMillis(), WAKEUP_REASON);
-        final Intent intent = getLaunchableIntent(
-                new Intent(Intent.ACTION_VIEW, Uri.parse("http:")));
+        final Intent intent = getLaunchableIntent(new Intent(Intent.ACTION_VIEW, Uri.parse("http:")));
         startActivitySafely(intent);
         doHapticFeedback();
     }
@@ -179,16 +269,14 @@ public class KeyHandler implements DeviceKeyHandler {
 
     private void launchEmail() {
         mPowerManager.wakeUp(SystemClock.uptimeMillis(), WAKEUP_REASON);
-        final Intent intent = getLaunchableIntent(
-                new Intent(Intent.ACTION_VIEW, Uri.parse("mailto:")));
+        final Intent intent = getLaunchableIntent(new Intent(Intent.ACTION_VIEW, Uri.parse("mailto:")));
         startActivitySafely(intent);
         doHapticFeedback();
     }
 
     private void launchMessages() {
         mPowerManager.wakeUp(SystemClock.uptimeMillis(), WAKEUP_REASON);
-        final Intent intent = getLaunchableIntent(
-                new Intent(Intent.ACTION_VIEW, Uri.parse("sms:")));
+        final Intent intent = getLaunchableIntent(new Intent(Intent.ACTION_VIEW, Uri.parse("sms:")));
         startActivitySafely(intent);
         doHapticFeedback();
     }
@@ -211,25 +299,64 @@ public class KeyHandler implements DeviceKeyHandler {
         }
     }
 
+    private static void dispatchMediaKeyWithWakeLock(int keycode, Context context) {
+        if (ActivityManagerNative.isSystemReady()) {
+            KeyEvent event = new KeyEvent(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), KeyEvent.ACTION_DOWN,
+                    keycode, 0);
+            MediaSessionLegacyHelper.getHelper(context).sendMediaButtonEvent(event, true);
+            event = KeyEvent.changeAction(event, KeyEvent.ACTION_UP);
+            MediaSessionLegacyHelper.getHelper(context).sendMediaButtonEvent(event, true);
+        }
+    }
+
     private void dispatchMediaKeyWithWakeLockToMediaSession(final int keycode) {
         final MediaSessionLegacyHelper helper = MediaSessionLegacyHelper.getHelper(mContext);
         if (helper == null) {
             Log.w(TAG, "Unable to send media key event");
             return;
         }
-        KeyEvent event = new KeyEvent(SystemClock.uptimeMillis(),
-                SystemClock.uptimeMillis(), KeyEvent.ACTION_DOWN, keycode, 0);
+        KeyEvent event = new KeyEvent(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), KeyEvent.ACTION_DOWN,
+                keycode, 0);
         helper.sendMediaButtonEvent(event, true);
         event = KeyEvent.changeAction(event, KeyEvent.ACTION_UP);
         helper.sendMediaButtonEvent(event, true);
+    }
+
+    private static void switchToLastApp(Context context) {
+        final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager.RunningTaskInfo lastTask = getLastTask(context, am);
+
+        if (lastTask != null) {
+            am.moveTaskToFront(lastTask.id, ActivityManager.MOVE_TASK_NO_USER_ACTION);
+        }
+    }
+
+    private static ActivityManager.RunningTaskInfo getLastTask(Context context, final ActivityManager am) {
+        final String defaultHomePackage = resolveCurrentLauncherPackage(context);
+        List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(5);
+
+        for (int i = 1; i < tasks.size(); i++) {
+            String packageName = tasks.get(i).topActivity.getPackageName();
+            if (!packageName.equals(defaultHomePackage) && !packageName.equals(context.getPackageName())
+                    && !packageName.equals("com.android.systemui")) {
+                return tasks.get(i);
+            }
+        }
+        return null;
+    }
+
+    private static String resolveCurrentLauncherPackage(Context context) {
+        final Intent launcherIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
+        final PackageManager pm = context.getPackageManager();
+        final ResolveInfo launcherInfo = pm.resolveActivity(launcherIntent, 0);
+        return launcherInfo.activityInfo.packageName;
     }
 
     private String getRearCameraId() {
         if (mRearCameraId == null) {
             try {
                 for (final String cameraId : mCameraManager.getCameraIdList()) {
-                    final CameraCharacteristics characteristics =
-                            mCameraManager.getCameraCharacteristics(cameraId);
+                    final CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(cameraId);
                     final int orientation = characteristics.get(CameraCharacteristics.LENS_FACING);
                     if (orientation == CameraCharacteristics.LENS_FACING_BACK) {
                         mRearCameraId = cameraId;
@@ -273,7 +400,7 @@ public class KeyHandler implements DeviceKeyHandler {
         return best;
     }
 
-   private Intent getLaunchableIntent(Intent intent) {
+    private Intent getLaunchableIntent(Intent intent) {
         PackageManager pm = mContext.getPackageManager();
         List<ResolveInfo> resInfo = pm.queryIntentActivities(intent, 0);
         if (resInfo.isEmpty()) {
@@ -284,9 +411,7 @@ public class KeyHandler implements DeviceKeyHandler {
 
     private void startActivitySafely(Intent intent) {
         intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         try {
             UserHandle user = new UserHandle(UserHandle.USER_CURRENT);
             mContext.startActivityAsUser(intent, null, user);
@@ -301,8 +426,31 @@ public class KeyHandler implements DeviceKeyHandler {
         }
 
         if (mAudioManager.getRingerMode() != AudioManager.RINGER_MODE_SILENT) {
-            mVibrator.vibrate(VibrationEffect.createOneShot(50,
-                    VibrationEffect.DEFAULT_AMPLITUDE));
+            mVibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
         }
+    }
+
+    private void triggerVirtualKeypress(final Handler handler, final int keyCode) {
+        final InputManager im = InputManager.getInstance();
+        long now = SystemClock.uptimeMillis();
+
+        final KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
+                KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_CLASS_BUTTON);
+        final KeyEvent upEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_UP);
+
+        // add a small delay to make sure everything behind got focus
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+            }
+        }, 10);
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+            }
+        }, 20);
     }
 }

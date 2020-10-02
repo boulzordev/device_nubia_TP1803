@@ -11,6 +11,9 @@
      limitations under the License.
 -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="assistant_button_category"
+        android:title="@string/custom_key_action">
         <ListPreference
             android:key="assistant_button"
             android:dialogTitle="@string/assistant_button_action"
@@ -18,4 +21,77 @@
             android:summary="%s"
             android:entries="@array/assistant_button_listArray"
             android:entryValues="@array/assistant_button_listValues" />
+     </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="fp_keys_category"
+        android:title="@string/fingerprint_gestures">
+        <ListPreference
+            android:key="fp_keys"
+            android:dialogTitle="@string/fingerprint_tap_dlg_title"
+            android:title="@string/fingerprint_tap_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_listArray"
+            android:entryValues="@array/fp_keys_listValues" />
+
+        <ListPreference
+            android:key="fp_key_hold"
+            android:dialogTitle="@string/fingerprint_long_tap_dlg_title"
+            android:title="@string/fingerprint_long_tap_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_listArray"
+            android:entryValues="@array/fp_keys_listValues" />
+
+        <ListPreference
+            android:key="fp_key_left"
+            android:dialogTitle="@string/fingerprint_swipe_left_dlg_title"
+            android:title="@string/fingerprint_swipe_left_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_listArray"
+            android:entryValues="@array/fp_keys_listValues" />
+
+        <ListPreference
+            android:key="fp_key_right"
+            android:dialogTitle="@string/fingerprint_swipe_right_dlg_title"
+            android:title="@string/fingerprint_swipe_right_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_listArray"
+            android:entryValues="@array/fp_keys_listValues" />
+     </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="graphics"
+        android:title="@string/fingerprint_gestures_screen_off">
+        <ListPreference
+            android:key="fp_keys_off"
+            android:dialogTitle="@string/fingerprint_tap_dlg_title"
+            android:title="@string/fingerprint_tap_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_screen_off_listArray"
+            android:entryValues="@array/fp_keys_screen_off_listValues" />
+
+        <ListPreference
+            android:key="fp_key_hold_off"
+            android:dialogTitle="@string/fingerprint_long_tap_dlg_title"
+            android:title="@string/fingerprint_long_tap_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_screen_off_listArray"
+            android:entryValues="@array/fp_keys_screen_off_listValues" />
+
+        <ListPreference
+            android:key="fp_key_left_off"
+            android:dialogTitle="@string/fingerprint_swipe_left_dlg_title"
+            android:title="@string/fingerprint_swipe_left_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_screen_off_listArray"
+            android:entryValues="@array/fp_keys_screen_off_listValues" />
+
+        <ListPreference
+            android:key="fp_key_right_off"
+            android:dialogTitle="@string/fingerprint_swipe_right_dlg_title"
+            android:title="@string/fingerprint_swipe_right_title"
+            android:summary="%s"
+            android:entries="@array/fp_keys_screen_off_listArray"
+            android:entryValues="@array/fp_keys_screen_off_listValues" />
+     </PreferenceCategory>
 </PreferenceScreen>

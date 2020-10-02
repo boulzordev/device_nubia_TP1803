@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-    <string name="advanced_settings">Custom key action</string>
+    <string name="advanced_settings">NubiaActions</string>
+
+    <!-- Custom key -->
+    <string name="custom_key_action">Custom key action</string>
     <string name="assistant_button_action">Action</string>
+
+    <!-- FP Gestures -->
+    <string name="fingerprint_gestures">Fingerprint gestures</string>
+    <string name="fingerprint_gestures_screen_off">Fingerprint gestures (screen off)</string>
+    <string name="fingerprint_tap_title">Single tap</string>
+    <string name="fingerprint_tap_dlg_title">Select action for single tap</string>
+    <string name="fingerprint_long_tap_title">Long tap</string>
+    <string name="fingerprint_long_tap_dlg_title">Select action for long tap</string>
+    <string name="fingerprint_swipe_left_title">Swipe left</string>
+    <string name="fingerprint_swipe_left_dlg_title">Select action for swipe left</string>
+    <string name="fingerprint_swipe_right_title">Swipe right</string>
+    <string name="fingerprint_swipe_right_dlg_title">Select action for swipe right</string>
 
     <!-- Actions -->
     <string name="action_none">None</string>
@@ -15,5 +30,15 @@
     <string name="action_dialer">Open dialer</string>
     <string name="action_email">Open email app</string>
     <string name="action_messages">Open messages app</string>
+    <string name="action_wake">Wake</string>
+    <string name="action_back">Back</string>
+    <string name="action_recents">Recents</string>
+    <string name="action_last_app">Last app</string>
+    <string name="action_volume_up">Volume up</string>
+    <string name="action_volume_down">Volume down</string>
+    <string name="action_home">Home</string>
+    <string name="action_power">Screen on/off</string>
+    <string name="action_previous_track">Previous track</string>
+    <string name="action_next_track">Next track</string>
 
 </resources>

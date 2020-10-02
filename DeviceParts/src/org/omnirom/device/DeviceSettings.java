@@ -38,12 +38,22 @@ import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceScreen;
 
-public class DeviceSettings extends PreferenceFragment
-        implements Preference.OnPreferenceChangeListener {
+import static org.omnirom.device.Constants.*;
+
+public class DeviceSettings extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
 
     private ListPreference mAssistantKeyPref;
     private final static String mAssistantKey = "assistant_button";
 
+    private ListPreference mFPTap;
+    private ListPreference mFPHold;
+    private ListPreference mFPLeft;
+    private ListPreference mFPRight;
+
+    private ListPreference mFPTapOff;
+    private ListPreference mFPHoldOff;
+    private ListPreference mFPLeftOff;
+    private ListPreference mFPRightOff;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -51,26 +61,83 @@ public class DeviceSettings extends PreferenceFragment
         getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
 
         mAssistantKeyPref = (ListPreference) findPreference(mAssistantKey);
-        Integer action = Settings.Global.getInt(getContext().getContentResolver(),
-                mAssistantKey, 0);
+        Integer action = Settings.Global.getInt(getContext().getContentResolver(), mAssistantKey, 0);
         mAssistantKeyPref.setValue(Integer.toString(action));
         mAssistantKeyPref.setOnPreferenceChangeListener(this);
+
+        mFPTap = (ListPreference) findPreference(FP_KEYS);
+        mFPTap.setValue(Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEYS, 0)));
+        mFPTap.setOnPreferenceChangeListener(this);
+
+        mFPHold = (ListPreference) findPreference(FP_KEY_HOLD);
+        mFPHold.setValue(Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_HOLD, 0)));
+        mFPHold.setOnPreferenceChangeListener(this);
+
+        mFPLeft = (ListPreference) findPreference(FP_KEY_LEFT);
+        mFPLeft.setValue(Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_LEFT, 0)));
+        mFPLeft.setOnPreferenceChangeListener(this);
+
+        mFPRight = (ListPreference) findPreference(FP_KEY_RIGHT);
+        mFPRight.setValue(Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_RIGHT, 0)));
+        mFPRight.setOnPreferenceChangeListener(this);
+
+        mFPTapOff = (ListPreference) findPreference(FP_KEYS_OFF);
+        mFPTapOff.setValue(Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEYS_OFF, 0)));
+        mFPTapOff.setOnPreferenceChangeListener(this);
+
+        mFPHoldOff = (ListPreference) findPreference(FP_KEY_HOLD_OFF);
+        mFPHoldOff.setValue(
+                Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_HOLD_OFF, 0)));
+        mFPHoldOff.setOnPreferenceChangeListener(this);
+
+        mFPLeftOff = (ListPreference) findPreference(FP_KEY_LEFT_OFF);
+        mFPLeftOff.setValue(
+                Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_LEFT_OFF, 0)));
+        mFPLeftOff.setOnPreferenceChangeListener(this);
+
+        mFPRightOff = (ListPreference) findPreference(FP_KEY_RIGHT_OFF);
+        mFPRightOff.setValue(
+                Integer.toString(Settings.Global.getInt(getContext().getContentResolver(), FP_KEY_RIGHT_OFF, 0)));
+        mFPRightOff.setOnPreferenceChangeListener(this);
     }
 
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
-        Settings.Global.putInt(getContext().getContentResolver(),
-                mAssistantKey, Integer.parseInt((String) newValue));
+        if (preference == mAssistantKeyPref) {
+            Settings.Global.putInt(getContext().getContentResolver(), mAssistantKey,
+                    Integer.parseInt((String) newValue));
+        } else if (preference == mFPTap) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEYS, Integer.parseInt((String) newValue));
+        } else if (preference == mFPHold) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_HOLD, Integer.parseInt((String) newValue));
+        } else if (preference == mFPLeft) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_LEFT, Integer.parseInt((String) newValue));
+        } else if (preference == mFPRight) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_RIGHT,
+                    Integer.parseInt((String) newValue));
+        } else if (preference == mFPTapOff) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEYS_OFF, Integer.parseInt((String) newValue));
+        } else if (preference == mFPHoldOff) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_HOLD_OFF,
+                    Integer.parseInt((String) newValue));
+        } else if (preference == mFPLeftOff) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_LEFT_OFF,
+                    Integer.parseInt((String) newValue));
+        } else if (preference == mFPRightOff) {
+            Settings.Global.putInt(getContext().getContentResolver(), FP_KEY_RIGHT_OFF,
+                    Integer.parseInt((String) newValue));
+        }
+
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-        // Respond to the action bar's Up/Home button
-        case android.R.id.home:
-            getActivity().finish();
-            return true;
+            // Respond to the action bar's Up/Home button
+            case android.R.id.home:
+                getActivity().finish();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
