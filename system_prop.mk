@@ -1,10 +1,3 @@
-# Bluetooth
-PRODUCT_PROPERTY_OVERRIDES += \
-    persist.vendor.btstack.a2dp_offload_cap=sbc-aac-ldac \
-    persist.vendor.btstack.enable.splita2dp=true \
-    vendor.bluetooth.soc=cherokee \
-    ro.bluetooth.library_name=libbluetooth_qti.so
-
 # Camera
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.camera.aux.packagelist=net.sourceforge.opencamera,com.google.android.GoogleCamera
