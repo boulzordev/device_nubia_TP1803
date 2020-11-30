@@ -73,7 +73,8 @@ PRODUCT_PACKAGES += \
     qti-telephony-utils \
     qti_telephony_utils.xml \
     qti-telephony-hidl-wrapper \
-    qti_telephony_hidl_wrapper.xml
+    qti_telephony_hidl_wrapper.xml \
+    TelephonyResNubia
 
 # TextClassifier
 PRODUCT_PACKAGES += \
